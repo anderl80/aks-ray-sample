@@ -1,0 +1,53 @@
+apiVersion: ray.io/v1
+kind: RayCluster
+metadata:
+  name: ray-cluster-mixed-type
+spec:
+  rayVersion: "2.9.0"
+
+  # Head node configuration (runs on the GPU node pool)
+  headGroupSpec:
+    rayStartParams: {}
+    template:
+      spec:
+        nodeSelector:
+          agentpool: raygpu
+        containers:
+          - name: ray-head
+            image: rayproject/ray:2.9.0
+            ports:
+              - containerPort: 6379
+                name: gcs-server
+              - containerPort: 8265 # Ray dashboard
+                name: dashboard
+              - containerPort: 10001
+                name: client
+            resources:
+              limits:
+                cpu: "1"
+                memory: "4Gi"
+              requests:
+                cpu: "1"
+                memory: "4Gi"
+
+  # Worker nodes configuration (runs on the CPU node pool)
+  workerGroupSpecs:
+    - replicas: 2
+      minReplicas: 1
+      maxReplicas: 10
+      groupName: small-group
+      rayStartParams: {}
+      template:
+        spec:
+          nodeSelector:
+            agentpool: raycpu
+          containers:
+            - name: ray-worker
+              image: rayproject/ray:2.9.0
+              resources:
+                limits:
+                  cpu: "3"
+                  memory: "4Gi"
+                requests:
+                  cpu: "3"
+                  memory: "4Gi"

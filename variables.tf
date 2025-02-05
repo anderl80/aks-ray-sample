@@ -1,16 +1,18 @@
 variable "subscription_id" {
   description = "The Azure subscription ID."
   type        = string
+  default     = "b87de7fe-844d-4fd7-aaa7-2754e58c687a"
 }
 
 variable "resource_group_owner" {
   description = "The owner of the resource group."
   type        = string
+  default     = "andreas.hopfgartner@microsoft.com"
 }
 
 variable "resource_group_location" {
   type        = string
-  default     = "eastus"
+  default     = "westeurope"
   description = "Location of the resource group."
 }
 
@@ -23,7 +25,7 @@ variable "resource_group_name_prefix" {
 variable "system_node_pool_vm_size" {
   type        = string
   description = "The size of the Virtual Machine."
-  default     = "Standard_D2_v2"
+  default     = "standard_d2as_v6"
 }
 
 variable "system_node_pool_node_count" {
@@ -35,7 +37,7 @@ variable "system_node_pool_node_count" {
 variable "ray_node_pool_vm_size" {
   type        = string
   description = "The size of the Virtual Machine."
-  default     = "Standard_D4s_v4"
+  default     = "standard_d4as_v6"
 }
 
 variable "msi_id" {

@@ -88,11 +88,44 @@ resource "azapi_update_resource" "k8s-default-node-pool-systempool-taint" {
   depends_on = [null_resource.wait_for_aks]
 }
 
-resource "azurerm_kubernetes_cluster_node_pool" "workload" {
-  name                  = "ray"
+resource "azurerm_kubernetes_cluster_node_pool" "ray_gpu" {
+  name                  = "raygpu"
   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s.id
   vm_size               = var.ray_node_pool_vm_size
-  node_count            = 4
+  node_count            = 1
+  node_labels = {
+    "ray-node-type" = "head"
+  }
 
   depends_on = [azapi_update_resource.k8s-default-node-pool-systempool-taint]
+}
+
+resource "azurerm_kubernetes_cluster_node_pool" "ray_cpu" {
+  name                  = "raycpu"
+  kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s.id
+  vm_size               = var.ray_node_pool_vm_size
+  node_count            = 1
+  enable_auto_scaling   = true
+  min_count             = 1
+  max_count             = 3
+  node_labels = {
+    "ray-node-type" = "worker"
+  }
+
+  depends_on = [azapi_update_resource.k8s-default-node-pool-systempool-taint]
+}
+
+resource "azurerm_storage_account" "ray_storage" {
+  name                     = "${random_pet.rg_name.id}raystorage"
+  resource_group_name      = azurerm_resource_group.rg.name
+  location                 = azurerm_resource_group.rg.location
+  account_tier             = "Standard"
+  account_replication_type = "LRS"
+  enable_https_traffic_only = true
+}
+
+resource "azurerm_storage_share" "ray_replay_buffer" {
+  name                 = "rayreplaybuffer"
+  storage_account_name = azurerm_storage_account.ray_storage.name
+  quota                = 5120
 }

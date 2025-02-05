@@ -55,36 +55,33 @@ helm upgrade \
 # Output the pods in the kuberay namespace
 kubectl get pods -n $kuberay_namespace
 
-# Download the PyTorch MNIST job YAML file
-curl -LO https://raw.githubusercontent.com/ray-project/kuberay/master/ray-operator/config/samples/pytorch-mnist/ray-job.pytorch-mnist.yaml
-
-# Train a PyTorch Model on Fashion MNIST
-kubectl apply -n $kuberay_namespace -f ray-job.pytorch-mnist.yaml
+# Set up the Ray cluster configuration
+kubectl apply -n $kuberay_namespace -f ray_cluster.yaml
 
 # Output the pods in the kuberay namespace
 kubectl get pods -n $kuberay_namespace
 
-# Get the status of the Ray job
-job_status=$(kubectl get rayjobs -n $kuberay_namespace -o jsonpath='{.items[0].status.jobDeploymentStatus}')
+# Get the status of the Ray cluster
+kubectl get raycluster -n $kuberay_namespace
 
-# Wait for the Ray job to complete
-while [ "$job_status" != "Complete" ]; do
-    echo -ne "Job Status: $job_status\\r"
-    sleep 30
-    job_status=$(kubectl get rayjobs -n $kuberay_namespace -o jsonpath='{.items[0].status.jobDeploymentStatus}')
-done
-echo "Job Status: $job_status"
-
-# Check if the job succeeded
-job_status=$(kubectl get rayjobs -n $kuberay_namespace -o jsonpath='{.items[0].status.jobStatus}')
-
-if [ "$job_status" != "SUCCEEDED" ]; then
-    echo "Job Failed!"
+# Wait for the Ray cluster to complete
+# Check the status of the Ray cluster
+while true; do
+  ray_cluster_status=$(kubectl get raycluster -n $kuberay_namespace -o jsonpath='{.items[0].status.state}')
+  if [[ "$ray_cluster_status" == "ready" ]]; then
+    echo "Ray cluster is running successfully."
+    break
+  elif [[ "$ray_cluster_status" == "failed" ]]; then
+    echo "Ray cluster creation failed. Current status: $ray_cluster_status"
     exit 1
-fi
+  else
+    echo "Waiting for Ray cluster to be running. Current status: $ray_cluster_status"
+    sleep 15 
+  fi
+done
 
 # If the job succeeded, get the Ray cluster head service
-rayclusterhead=$(kubectl get service -n $kuberay_namespace | grep 'rayjob-pytorch-mnist-raycluster' | grep 'ClusterIP' | awk '{print $1}')
+rayclusterhead=$(kubectl get service -n $kuberay_namespace | grep 'ray-cluster-mixed-type' | grep 'ClusterIP' | awk '{print $1}')
 
 # Now create a service of type NodePort for the Ray cluster head
 kubectl expose service $rayclusterhead \
