@@ -119,4 +119,6 @@ lb_public_ip=$(kubectl get svc -n app-routing-system -o jsonpath='{.items[?(@.me
 
 echo "KubeRay Dashboard URL: http://$lb_public_ip/"
 
+export RAY_ADDRESS="http://$lb_public_ip:80"
+
 exit 0

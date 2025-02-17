@@ -1,26 +1,13 @@
-# Generate random resource group name
-resource "random_pet" "rg_name" {
-  prefix = var.resource_group_name_prefix
-}
-
 resource "azurerm_resource_group" "rg" {
   location = var.resource_group_location
-  name     = random_pet.rg_name.id
-}
-
-resource "random_pet" "azurerm_kubernetes_cluster_name" {
-  prefix = "cluster"
-}
-
-resource "random_pet" "azurerm_kubernetes_cluster_dns_prefix" {
-  prefix = "dns"
+  name     = var.resource_group_name
 }
 
 resource "azurerm_kubernetes_cluster" "k8s" {
   location                         = azurerm_resource_group.rg.location
-  name                             = random_pet.azurerm_kubernetes_cluster_name.id
-  resource_group_name              = azurerm_resource_group.rg.name
-  dns_prefix                       = random_pet.azurerm_kubernetes_cluster_dns_prefix.id
+  name                             = azurerm_resource_group.rg.name
+  resource_group_name              = "rg-aiops-kuberay"
+  dns_prefix                       = "dns"
   http_application_routing_enabled = true
     
   identity {
@@ -93,6 +80,9 @@ resource "azurerm_kubernetes_cluster_node_pool" "ray_gpu" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s.id
   vm_size               = var.ray_node_pool_vm_size
   node_count            = 1
+  auto_scaling_enabled  = true
+  min_count             = 1
+  max_count             = 3
   node_labels = {
     "ray-node-type" = "head"
   }
@@ -105,7 +95,7 @@ resource "azurerm_kubernetes_cluster_node_pool" "ray_cpu" {
   kubernetes_cluster_id = azurerm_kubernetes_cluster.k8s.id
   vm_size               = var.ray_node_pool_vm_size
   node_count            = 1
-  enable_auto_scaling   = true
+  auto_scaling_enabled  = true
   min_count             = 1
   max_count             = 3
   node_labels = {
@@ -113,19 +103,4 @@ resource "azurerm_kubernetes_cluster_node_pool" "ray_cpu" {
   }
 
   depends_on = [azapi_update_resource.k8s-default-node-pool-systempool-taint]
-}
-
-resource "azurerm_storage_account" "ray_storage" {
-  name                     = "${random_pet.rg_name.id}raystorage"
-  resource_group_name      = azurerm_resource_group.rg.name
-  location                 = azurerm_resource_group.rg.location
-  account_tier             = "Standard"
-  account_replication_type = "LRS"
-  enable_https_traffic_only = true
-}
-
-resource "azurerm_storage_share" "ray_replay_buffer" {
-  name                 = "rayreplaybuffer"
-  storage_account_name = azurerm_storage_account.ray_storage.name
-  quota                = 5120
 }
