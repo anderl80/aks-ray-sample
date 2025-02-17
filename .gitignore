@@ -40,3 +40,6 @@ terraform.rc
 ray-job.pytorch-mnist.yaml
 *.tfplan
 *terraform.lock.hcl
+
+# Ignore credentials
+.env
