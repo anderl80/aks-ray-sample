@@ -10,9 +10,6 @@ spec:
       - emoji
       - mlflow
     working_dir: "https://github.com/anderl80/aks-ray-sample/archive/refs/heads/kuberay.zip"
-    env_vars:
-#      DATABRICKS_HOST: ${DATABRICKS_HOST}
-#      DATABRICKS_TOKEN: ${DATABRICKS_TOKEN}
 
   # rayClusterSpec specifies the RayCluster instance to be created by the RayJob controller.
   rayClusterSpec:
@@ -41,6 +38,17 @@ spec:
                 requests:
                   cpu: "1"
                   memory: "2Gi"
+              env:
+                - name: DATABRICKS_HOST
+                  valueFrom:
+                    secretKeyRef:
+                      name: databricks-mlflow
+                      key: DATABRICKS_HOST
+                - name: DATABRICKS_TOKEN
+                  valueFrom:
+                    secretKeyRef:
+                      name: databricks-mlflow
+                      key: DATABRICKS_TOKEN
     workerGroupSpecs:
       - replicas: 2
         minReplicas: 1
@@ -62,3 +70,14 @@ spec:
                   requests:
                     cpu: "3"
                     memory: "2Gi"
+                env:
+                  - name: DATABRICKS_HOST
+                    valueFrom:
+                      secretKeyRef:
+                        name: databricks-mlflow
+                        key: DATABRICKS_HOST
+                  - name: DATABRICKS_TOKEN
+                    valueFrom:
+                      secretKeyRef:
+                        name: databricks-mlflow
+                        key: DATABRICKS_TOKEN
