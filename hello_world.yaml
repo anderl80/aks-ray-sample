@@ -1,8 +1,0 @@
-spec:
-  runtimeEnvYAML: |
-    pip:
-      - emoji
-      - mlflow
-    env_vars:
-      DATABRICKS_HOST:
-      DATABRICKS_TOKEN:

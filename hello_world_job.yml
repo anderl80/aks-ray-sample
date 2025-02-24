@@ -1,0 +1,64 @@
+apiVersion: ray.io/v1
+kind: RayJob
+metadata:
+  name: rayjob-helloworld
+spec:
+  shutdownAfterJobFinishes: true
+  entrypoint: python hello_world.py
+  runtimeEnvYAML: |
+    pip:
+      - emoji
+      - mlflow
+    working_dir: "https://github.com/anderl80/aks-ray-sample/archive/refs/heads/kuberay.zip"
+    env_vars:
+#      DATABRICKS_HOST: ${DATABRICKS_HOST}
+#      DATABRICKS_TOKEN: ${DATABRICKS_TOKEN}
+
+  # rayClusterSpec specifies the RayCluster instance to be created by the RayJob controller.
+  rayClusterSpec:
+    rayVersion: '2.41.0'
+    headGroupSpec:
+      rayStartParams: {}
+      # Pod template
+      template:
+        spec:
+          nodeSelector:
+            agentpool: raygpu
+          containers:
+            - name: ray-head
+              image: rayproject/ray:2.41.0
+              ports:
+                - containerPort: 6379
+                  name: gcs-server
+                - containerPort: 8265 # Ray dashboard
+                  name: dashboard
+                - containerPort: 10001
+                  name: client
+              resources:
+                limits:
+                  cpu: "1"
+                  memory: "2Gi"
+                requests:
+                  cpu: "1"
+                  memory: "2Gi"
+    workerGroupSpecs:
+      - replicas: 2
+        minReplicas: 1
+        maxReplicas: 5
+        groupName: small-group
+        rayStartParams: {}
+        # Pod template
+        template:
+          spec:
+            nodeSelector:
+              agentpool: raycpu
+            containers:
+              - name: ray-worker
+                image: rayproject/ray:2.41.0
+                resources:
+                  limits:
+                    cpu: "3"
+                    memory: "2Gi"
+                  requests:
+                    cpu: "3"
+                    memory: "2Gi"
